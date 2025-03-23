@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import supabase from "../supabase";
 import { 
   Button, 
   Slider, 
@@ -8,7 +9,9 @@ import {
   MenuItem,
   Paper,
   Container,
-  FormControl
+  FormControl,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
@@ -17,25 +20,100 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
-const HabitTracker = () => {
+const HabitTracker = ({ profileId }) => {
+  // Auth state
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [activeProfileId, setActiveProfileId] = useState(null);
+  
   // Color theme variables
   const primaryColor = "#7a5a3d"; // Dark brown
   const secondaryColor = "#8d6b4d"; // Warm brown
   const accentColor = "#ffd599"; // Light orange/peach
   const backgroundColor = "#fcf8f3"; // Light cream
 
+  // Form state
   const [sleepHours, setSleepHours] = useState("6-8 hrs");
   const [nutrition, setNutrition] = useState("Average");
   const [waterIntake, setWaterIntake] = useState(5);
   const [exercise, setExercise] = useState("None");
   const [breastfeeding, setBreastfeeding] = useState(2);
-  const [energy, setEnergy] = useState("Moderate");
-  const [babySleep, setBabySleep] = useState("Frequent Wakes");
-  const [stress, setStress] = useState("Moderate");
-  const [pain, setPain] = useState("Mild");
-  const [medication, setMedication] = useState(false);
-  const [selfCare, setSelfCare] = useState("None");
+  const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success"
+  });
+
+  // Get current authenticated user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error('Error getting user:', error);
+        return;
+      }
+      
+      if (user) {
+        setCurrentUserId(user.id);
+        // Use the authenticated user ID as the active profile ID if no profile ID is provided
+        setActiveProfileId(profileId || user.id);
+      } else if (profileId) {
+        // If no authenticated user but profile ID is provided, use that
+        setActiveProfileId(profileId);
+      } else {
+        // No user and no profile ID
+        setSnackbar({
+          open: true,
+          message: "Error: Profile ID is required",
+          severity: "error"
+        });
+      }
+    };
+    
+    getCurrentUser();
+  }, [profileId]);
+
+  // Check if there's existing data for the selected date
+  useEffect(() => {
+    const fetchTodayData = async () => {
+      if (!activeProfileId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('wellness_logs')
+          .select('*')
+          .eq('profile_id', activeProfileId)
+          .eq('log_date', logDate)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching data:', error);
+          return;
+        }
+        
+        if (data) {
+          // Populate form with existing data
+          setSleepHours(data.sleep_hours);
+          setNutrition(data.nutrition);
+          setWaterIntake(data.water_intake);
+          setExercise(data.exercise);
+          setBreastfeeding(data.breastfeeding);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    if (activeProfileId) {
+      fetchTodayData();
+    }
+  }, [activeProfileId, logDate]);
 
   // Function to calculate total score
   const calculateScore = () => {
@@ -61,6 +139,63 @@ const HabitTracker = () => {
     score += breastfeedingScores[breastfeeding];
 
     return Math.min(100, score);
+  };
+
+  // Function to save data to Supabase
+  const saveProgress = async () => {
+    if (!activeProfileId) {
+      setSnackbar({
+        open: true,
+        message: "Error: Profile ID is required",
+        severity: "error"
+      });
+      return;
+    }
+
+    setLoading(true);
+    const wellness_score = calculateScore();
+    
+    try {
+      const { data, error } = await supabase
+        .from('wellness_logs')
+        .upsert({
+          profile_id: activeProfileId,
+          log_date: logDate,
+          submission_date: new Date().toISOString().split('T')[0],
+          sleep_hours: sleepHours,
+          nutrition: nutrition,
+          water_intake: waterIntake,
+          exercise: exercise,
+          breastfeeding: breastfeeding.toString(), // Convert to string as per db schema
+          wellness_score: wellness_score
+        }, { 
+          onConflict: 'profile_id,log_date' // Handle duplicate entries
+        });
+
+      if (error) {
+        console.error('Error saving data:', error);
+        setSnackbar({
+          open: true,
+          message: `Error: ${error.message}`,
+          severity: "error"
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Progress saved successfully!",
+          severity: "success"
+        });
+      }
+    } catch (error) {
+      console.error('Exception:', error);
+      setSnackbar({
+        open: true,
+        message: "An unexpected error occurred",
+        severity: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Custom Select with Icon
@@ -114,16 +249,25 @@ const HabitTracker = () => {
   );
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2, bgcolor: backgroundColor }}>
+    <Container maxWidth="sm" sx={{ 
+      height: '100vh', 
+      overflow: 'auto', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'flex-start', 
+      p: 2, 
+      bgcolor: backgroundColor 
+    }}>
       <Paper 
         elevation={6} 
         sx={{ 
           width: '100%', 
           maxWidth: 400, 
-          overflow: 'hidden',
           borderRadius: 3,
           boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
-          bgcolor: backgroundColor, // Changed form background to match container background
+          bgcolor: backgroundColor,
+          my: 2,
+          overflow: 'hidden',
         }}
       >
         {/* Header */}
@@ -168,7 +312,50 @@ const HabitTracker = () => {
         </Box>
 
         {/* Form Inputs */}
-        <Box sx={{ p: 3, bgcolor: backgroundColor }}>
+        <Box sx={{ p: 3, bgcolor: backgroundColor, maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}>
+          {/* Show profile info if available */}
+          {activeProfileId && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(255, 213, 153, 0.2)', borderRadius: 2 }}>
+              <Typography variant="body2" sx={{ color: primaryColor }}>
+                Tracking wellness for profile: {activeProfileId.substring(0, 8)}...
+              </Typography>
+            </Box>
+          )}
+        
+          {/* Date picker */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500, color: "rgba(0, 0, 0, 0.7)" }}>
+              Log Date
+            </Typography>
+            <FormControl fullWidth>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                height: '56px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '4px',
+                px: 2,
+                bgcolor: 'white',
+                boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+              }}>
+                <CalendarTodayIcon sx={{ color: primaryColor, mr: 2 }} />
+                <input
+                  type="date"
+                  value={logDate}
+                  onChange={(e) => setLogDate(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    width: '100%',
+                    fontSize: '1rem',
+                    fontFamily: 'inherit',
+                    backgroundColor: 'transparent'
+                  }}
+                />
+              </Box>
+            </FormControl>
+          </Box>
+
           <IconSelect 
             icon={<AccessTimeIcon />}
             label="Sleep Duration"
@@ -245,6 +432,8 @@ const HabitTracker = () => {
             variant="contained" 
             fullWidth 
             endIcon={<ArrowForwardIcon />}
+            onClick={saveProgress}
+            disabled={loading || !activeProfileId}
             sx={{ 
               mt: 2, 
               py: 1.5, 
@@ -257,10 +446,26 @@ const HabitTracker = () => {
               fontWeight: 500,
             }}
           >
-            Save Today's Progress
+            {loading ? "Saving..." : "Save Today's Progress"}
           </Button>
         </Box>
       </Paper>
+
+      {/* Feedback Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
