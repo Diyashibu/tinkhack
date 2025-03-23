@@ -10,8 +10,29 @@ const CommunityPage = () => {
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
-  const email = 'diyathereseshibu@gmail.com'; // Hardcoded email
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
   const postsContainerRef = useRef(null);
+
+  // Get current user on component load
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error getting session:', error.message);
+        return;
+      }
+      
+      if (session?.user) {
+        setCurrentUserEmail(session.user.email);
+      } else {
+        console.log('No active session found');
+        // Handle not logged in state - redirect to login or use default value
+      }
+    };
+
+    getUser();
+  }, []);
 
   // Fetch posts from Supabase on component load
   useEffect(() => {
@@ -21,7 +42,7 @@ const CommunityPage = () => {
         const { data, error } = await supabase
           .from('posts')
           .select('id, content, email, created_at')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: true }); // Changed to ascending order
 
         if (error) {
           console.error('Error fetching posts:', error.message);
@@ -56,13 +77,13 @@ const CommunityPage = () => {
 
   // Handle submitting a new post
   const handlePost = async () => {
-    if (!content.trim()) return;
+    if (!content.trim() || !currentUserEmail) return;
     
     setIsPosting(true);
     
     const newPost = {
       content: content.trim(),
-      email,
+      email: currentUserEmail,
       created_at: new Date().toISOString(), // Store in UTC format
     };
 
@@ -76,13 +97,15 @@ const CommunityPage = () => {
         console.error('Error adding post:', error.message);
       } else if (data && data.length > 0) {
         console.log('Post added successfully:', data);
-        // Display new post at the bottom instead of the top
+        // Add new post to the end of the array
         setPosts((prevPosts) => [...prevPosts, data[0]]);
         setContent('');
         
         // Scroll to bottom of posts container to see new post
         if (postsContainerRef.current) {
-          postsContainerRef.current.scrollTop = postsContainerRef.current.scrollHeight;
+          setTimeout(() => {
+            postsContainerRef.current.scrollTop = postsContainerRef.current.scrollHeight;
+          }, 100); // Small delay to ensure DOM update
         }
       }
     } catch (err) {
@@ -161,6 +184,11 @@ const CommunityPage = () => {
     }
   };
 
+  // Check if post belongs to current user
+  const isCurrentUserPost = (postEmail) => {
+    return postEmail === currentUserEmail;
+  };
+
   // Handle pressing Enter to submit
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -199,6 +227,7 @@ const CommunityPage = () => {
     <div className="community-page">
       <div className="community-header">
         <h1>Community</h1>
+        {currentUserEmail && <p className="logged-in-as">Logged in as: {currentUserEmail}</p>}
       </div>
       
       <div className="posts-container" ref={postsContainerRef}>
@@ -209,20 +238,22 @@ const CommunityPage = () => {
             <div key={post.id} className="post">
               <div className="post-header">
                 <span className="post-email">{post.email}</span>
-                <div className="post-menu-container">
-                  <button 
-                    className="post-menu-button" 
-                    onClick={(e) => toggleMenu(e, post.id)}
-                  >
-                    ...
-                  </button>
-                  {openMenuId === post.id && (
-                    <div className="post-menu">
-                      <button onClick={(e) => startEdit(e, post)}>Edit</button>
-                      <button onClick={(e) => deletePost(e, post.id)}>Delete</button>
-                    </div>
-                  )}
-                </div>
+                {isCurrentUserPost(post.email) && (
+                  <div className="post-menu-container">
+                    <button 
+                      className="post-menu-button" 
+                      onClick={(e) => toggleMenu(e, post.id)}
+                    >
+                      ...
+                    </button>
+                    {openMenuId === post.id && (
+                      <div className="post-menu">
+                        <button onClick={(e) => startEdit(e, post)}>Edit</button>
+                        <button onClick={(e) => deletePost(e, post.id)}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="post-body">
@@ -259,16 +290,16 @@ const CommunityPage = () => {
       
       <div className="input-container">
         <textarea
-          placeholder="Share your thoughts..."
+          placeholder={currentUserEmail ? "Share your thoughts..." : "Please login to post"}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={isPosting}
+          disabled={isPosting || !currentUserEmail}
           className="limited-width-textarea"
         />
         <button 
           onClick={handlePost} 
-          disabled={isPosting || !content.trim()}
+          disabled={isPosting || !content.trim() || !currentUserEmail}
         >
           {isPosting ? 'Posting...' : 'Post'}
         </button>
