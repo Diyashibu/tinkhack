@@ -14,6 +14,7 @@ import {
   DialogActions,
   Tabs, 
   Tab,
+  Link,
   List,
   ListItem,
   ListItemIcon,
@@ -306,19 +307,31 @@ const MentalHealthSupport = () => {
             </Card>
             
             {/* Confidential */}
-            <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box sx={{ color: "#9c27b0", mr: 2 }}>
-                    <ShieldIcon fontSize="large" />
-                  </Box>
-                  <Typography variant="h6">Confidential</Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Your privacy is our top priority.
-                </Typography>
-              </CardContent>
-            </Card>
+            <Link to="/habit-tracker" style={{ textDecoration: "none" }}>
+        <Card
+          sx={{
+      flex: 1,
+      minWidth: 300,
+      borderRadius: 3,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+      cursor: "pointer",
+      transition: "0.3s",
+      "&:hover": { boxShadow: "0 6px 16px rgba(0,0,0,0.1)" },
+    }}
+  >
+    <CardContent sx={{ p: 4 }}>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <Box sx={{ color: "#9c27b0", mr: 2 }}>
+          <ShieldIcon fontSize="large" />
+        </Box>
+        <Typography variant="h6">Habit tracker</Typography>
+      </Box>
+      <Typography variant="body2" color="text.secondary">
+        Your privacy is our top priority.
+      </Typography>
+    </CardContent>
+  </Card>
+</Link>
             
             {/* Professional Care */}
             <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
