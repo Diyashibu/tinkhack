@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { 
   Button, 
   Card, 
@@ -14,6 +15,7 @@ import {
   DialogActions,
   Tabs, 
   Tab,
+  Link,
   List,
   ListItem,
   ListItemIcon,
@@ -132,18 +134,22 @@ const MentalHealthSupport = () => {
   ];
   
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error logging out:', error);
-        // Optionally show an error message to the user
-      } else {
-        navigate("/"); // Redirect to login page after successful logout
-      }
-    } catch (err) {
-      console.error('Unexpected error during logout:', err);
+    const { data, error } = await supabase.auth.getSession();
+  
+    if (!data.session) {
+      console.error("No active session found!");
+      return;
+    }
+  
+    const { error: signOutError } = await supabase.auth.signOut();
+    
+    if (signOutError) {
+      console.error("Error logging out:", signOutError.message);
+    } else {
+      console.log("User logged out successfully");
     }
   };
+  
   
   return (
     <>
@@ -180,7 +186,7 @@ const MentalHealthSupport = () => {
         </Toolbar>
       </AppBar>
       
-      <Box sx={{ minHeight: "100vh", bgcolor: theme.background }}>
+      <Box sx={{ minHeight: "100vh", bgcolor: theme.background, overflowY: "auto" }}>
         {/* Header */}
         <Box sx={{ 
           display: "flex", 
@@ -195,7 +201,7 @@ const MentalHealthSupport = () => {
 
         <Container maxWidth="lg">
           {/* Main Heading */}
-          <Box sx={{ textAlign: "center", mt: 8, mb: 3 }}>
+          <Box sx={{ textAlign: "center", mt: 4, mb: 3 }}>
             <Typography 
               variant="h2" 
               sx={{ 
@@ -327,23 +333,26 @@ const MentalHealthSupport = () => {
               </CardContent>
             </Card>
             
-            {/* Confidential */}
-            <Card sx={{ 
-              flex: 1, 
-              minWidth: 300, 
-              borderRadius: 3, 
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-              bgcolor: theme.accent
-            }}>
+            <Card
+      sx={{
+        flex: 1,
+        minWidth: 300,
+        borderRadius: 3,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        bgcolor: theme.secondary,
+        cursor: "pointer" // Makes it look clickable
+      }}
+      onClick={() => navigate("/habit-tracker")} // Navigate on click
+    >
               <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <Box sx={{ color: theme.primary, mr: 2 }}>
-                    <ShieldIcon fontSize="large" />
+                    <SupportAgentIcon fontSize="large" />
                   </Box>
-                  <Typography variant="h6">Confidential</Typography>
+                  <Typography variant="h6">Habit Tracker</Typography>
                 </Box>
                 <Typography variant="body2" color={theme.textSecondary}>
-                  Your privacy is our top priority.
+                  Your safety is our priority.
                 </Typography>
               </CardContent>
             </Card>
