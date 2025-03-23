@@ -1,117 +1,255 @@
-/* Ensure full width layout */
-.community-container {
-    width: 100%; /* Take full width */
-    margin: 0;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    display: flex;
+/* Reset and full page layout */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* Main container with fixed height */
+.community-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Full viewport height */
+  max-height: 100vh;
+  overflow: hidden; /* Prevent page scrolling */
+  background-color: black;
+}
+
+/* Header styling */
+.community-header {
+  padding: 15px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  background-color: black;
+}
+
+.community-header h1 {
+  margin: 0;
+  color: #ddd;
+  font-size: 24px;
+}
+
+/* Scrollable posts container */
+.posts-container {
+  flex: 1; /* Take all available space */
+  overflow-y: auto; /* Only this container scrolls */
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: black;
+  border: 1px solid #ddd;
+  margin: 0 15px;
+}
+
+/* Input container at bottom */
+.input-container {
+  padding: 15px;
+  display: flex;
+  gap: 10px;
+  background-color: black;
+  border-top: 1px solid #ddd;
+  align-items: flex-start;
+  justify-content: center; /* Center the input box */
+}
+
+.input-container textarea {
+  flex: 1;
+  height: 60px;
+  resize: none;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+/* New class for limited width textarea */
+.limited-width-textarea {
+  max-width: 70%; /* Adjust this value to your preference */
+  width: 600px; /* Set a fixed width */
+}
+
+.input-container button {
+  height: 40px;
+  background-color: #4a90e2;
+  color: rgb(38, 35, 35);
+  border: none;
+  border-radius: 4px;
+  padding: 0 15px;
+  cursor: pointer;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.input-container button:hover {
+  background-color: #3a80d2;
+}
+
+.input-container button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Post styling */
+.post {
+  border: 1px solid #6b73ff;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.post-email {
+  font-weight: bold;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+/* Menu styling */
+.post-menu-container {
+  position: relative;
+}
+
+.post-menu-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 0 5px;
+  color: #888;
+}
+
+.post-menu-button:hover {
+  color: #333;
+}
+
+.post-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+  overflow: hidden;
+}
+
+.post-menu button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.post-menu button:last-child {
+  border-bottom: none;
+}
+
+.post-menu button:hover {
+  background-color: #f5f5f5;
+}
+
+.post-body {
+  flex-grow: 1;
+  margin-bottom: 12px;
+}
+
+.post-body p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.post-footer {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+  color: #6b73ff;
+}
+
+/* Loading and empty states */
+.loading-indicator,
+.no-posts-message {
+  text-align: center;
+  color: #777;
+  padding: 20px;
+}
+
+/* Edit mode styling */
+.edit-controls {
+  width: 100%;
+}
+
+.edit-textarea {
+  min-height: 80px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.edit-buttons button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancel-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #d32f2f;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .input-container {
     flex-direction: column;
     align-items: center;
-    height: 100vh;
-    background-color: #222; /* Adjust background color */
   }
   
-  .title {
-    text-align: center;
-    color: white;
-    margin-bottom: 20px;
-    width: 100%; /* Ensure title takes full width */
+  .input-container button {
+    width: 70%; /* Match the textarea width on mobile */
   }
   
-  /* Posts container takes full width */
-  .posts-container {
-    width: 100%; /* Full width */
-    max-width: 800px; /* Limit width */
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    flex-grow: 1; /* Allows it to take available space */
-    overflow-y: auto;
-    margin-bottom: 15px;
-    max-height: calc(100vh - 250px);
-  }
-  
-  .post {
-    background-color: #f1f1f1;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-  
-  .post-content {
-    margin: 0;
-    font-size: 16px;
-    color: #333;
-    word-wrap: break-word; /* Handle long words */
-  }
-  
-  .post-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 12px;
-    color: #777;
-  }
-  
-  .email, .timestamp {
-    font-style: italic;
-  }
-  
-  /* Post form styling */
-  .post-form {
-    width: 100%; /* Full width */
-    max-width: 800px; /* Limit width */
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .email-display {
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 10px;
+  .limited-width-textarea {
+    max-width: 100%; /* Full width on mobile */
     width: 100%;
   }
-  
-  textarea {
-    width: 100%;
-    height: 60px; /* Reduced height */
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    margin-bottom: 10px;
-    font-size: 14px;
-    resize: none;
-  }
-  
-  button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    width: auto;
-    align-self: flex-end; /* Align button to the right */
-  }
-  
-  button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  
-  /* Responsive Styling */
-  @media (max-width: 600px) {
-    .community-container {
-      padding: 10px;
-    }
-    
-    .posts-container, .post-form {
-      max-width: 100%;
-    }
-  }
+}
