@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { 
   Button, 
   Card, 
@@ -14,6 +15,7 @@ import {
   DialogActions,
   Tabs, 
   Tab,
+  Link,
   List,
   ListItem,
   ListItemIcon,
@@ -38,6 +40,17 @@ import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from 'react-router-dom';
 import supabase from "../supabase";
+
+// New color theme
+const theme = {
+  primary: "#8d6b4d", // Warm brown
+  secondary: "#ffd599", // Light orange
+  background: "#fcf8f3", // Cream
+  accent: "#e5ebda", // Light green
+  white: "#ffffff",
+  textPrimary: "#333333",
+  textSecondary: "#666666"
+};
 
 const counselors = [
   { name: "Dr. Sarah Johnson", contact: "+91 98765 43210" },
@@ -119,85 +132,81 @@ const MentalHealthSupport = () => {
     <LocalHospitalIcon key="doctors" />,
     <HealthAndSafetyIcon key="therapists" />
   ];
+  
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error logging out:', error);
-        // Optionally show an error message to the user
-      } else {
-        navigate("/"); // Redirect to login page after successful logout
-      }
-    } catch (err) {
-      console.error('Unexpected error during logout:', err);
+    const { data, error } = await supabase.auth.getSession();
+  
+    if (!data.session) {
+      console.error("No active session found!");
+      return;
+    }
+  
+    const { error: signOutError } = await supabase.auth.signOut();
+    
+    if (signOutError) {
+      console.error("Error logging out:", signOutError.message);
+    } else {
+      console.log("User logged out successfully");
     }
   };
+  
+  
   return (
     <>
-      <AppBar position="static">
-  <Toolbar 
-    sx={{ 
-      display: "flex", 
-      justifyContent: "space-between",
-      padding: 0,
-      minHeight: "auto"
-    }}
-  >
-    <Typography 
-      variant="h6" 
-      sx={{ 
-        cursor: "pointer",
-        paddingLeft: "4px",
-        margin: 0
-      }} 
-      onClick={() => navigate("/")}
-    >
-      My App
-    </Typography>
-    <Box sx={{ 
-      display: "flex", 
-      margin: 0,
-      padding: 0
-    }}>
-      <Button color="inherit" onClick={() => navigate("/Community")}>Community</Button>
-      <Button color="inherit" onClick={() => navigate("/Help")}>Help</Button>
-      <Button color="inherit" onClick={handleLogout}>Logout</Button>
-    </Box>
-  </Toolbar>
-</AppBar>
-      <Box sx={{ minHeight: "100vh", bgcolor: "#f0f8ff" }}>
+      <AppBar position="static" sx={{ bgcolor: theme.primary }}>
+        <Toolbar 
+          sx={{ 
+            display: "flex", 
+            justifyContent: "space-between",
+            padding: 0,
+            minHeight: "auto"
+          }}
+        >
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              cursor: "pointer",
+              paddingLeft: "4px",
+              margin: 0,
+              color: theme.white
+            }} 
+            onClick={() => navigate("/")}
+          >
+            My App
+          </Typography>
+          <Box sx={{ 
+            display: "flex", 
+            margin: 0,
+            padding: 0
+          }}>
+            <Button color="inherit" onClick={() => navigate("/Community")}>Community</Button>
+            <Button color="inherit" onClick={() => navigate("/Help")}>Help</Button>
+            <Button color="inherit" onClick={handleLogout}>Logout</Button>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      
+      <Box sx={{ minHeight: "100vh", bgcolor: theme.background, overflowY: "auto" }}>
         {/* Header */}
         <Box sx={{ 
           display: "flex", 
           justifyContent: "space-between", 
           alignItems: "center", 
           p: 0,
-          borderBottom: "1px solid #e0e0e0",
-          bgcolor: "white"
+          borderBottom: `1px solid ${theme.secondary}`,
+          bgcolor: theme.white
         }}>
-          {/*<Box sx={{ display: "flex", alignItems: "center" }}>
-            <FavoriteIcon sx={{ color: "#ff4081", mr: 1 }} />
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              MindfulSupport
-            </Typography>
-          </Box>
-          <Button 
-            variant="outlined" 
-            startIcon={<PhoneIcon />}
-            onClick={() => setHelpModalOpen(true)}
-          >
-            Get Help Now
-          </Button>*/}
+          {/* Header content removed as per original */}
         </Box>
 
         <Container maxWidth="lg">
           {/* Main Heading */}
-          <Box sx={{ textAlign: "center", mt: 8, mb: 3 }}>
+          <Box sx={{ textAlign: "center", mt: 4, mb: 3 }}>
             <Typography 
               variant="h2" 
               sx={{ 
                 fontWeight: "bold", 
-                background: "linear-gradient(90deg, #4169e1, #9370db)", 
+                background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})`, 
                 backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -206,7 +215,7 @@ const MentalHealthSupport = () => {
             >
               You're Not Alone. Help is Here.
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography variant="h6" color={theme.textSecondary}>
               Reach out now – support is available 24/7.
             </Typography>
           </Box>
@@ -214,25 +223,32 @@ const MentalHealthSupport = () => {
           {/* Main Content */}
           <Box sx={{ mt: 5, display: "flex", gap: 3, flexWrap: "wrap" }}>
             {/* Crisis Analysis */}
-            <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <Card sx={{ 
+              flex: 1, 
+              minWidth: 300, 
+              borderRadius: 3, 
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              bgcolor: theme.white
+            }}>
               <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                  <Box sx={{ bgcolor: "#e6efff", borderRadius: "50%", p: 2, mr: 2 }}>
-                    <PhoneIcon sx={{ color: "#4169e1", fontSize: 28 }} />
+                  <Box sx={{ bgcolor: theme.accent, borderRadius: "50%", p: 2, mr: 2 }}>
+                    <PhoneIcon sx={{ color: theme.primary, fontSize: 28 }} />
                   </Box>
                   <Typography variant="h5" fontWeight="medium">Crisis Analysis</Typography>
                 </Box>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                <Typography variant="body1" color={theme.textSecondary} sx={{ mb: 3 }}>
                   View details of mental health professionals.
                 </Typography>
                 <Button 
                   variant="contained" 
                   fullWidth 
                   sx={{ 
-                    bgcolor: "#4169e1", 
+                    bgcolor: theme.primary, 
                     borderRadius: 2,
                     py: 1.5,
-                    textTransform: "none"
+                    textTransform: "none",
+                    "&:hover": { bgcolor: "#7a5c42" }
                   }} 
                   onClick={() => setCrisisModalOpen(true)}
                 >
@@ -242,7 +258,13 @@ const MentalHealthSupport = () => {
             </Card>
 
             {/* Emergency Contacts */}
-            <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <Card sx={{ 
+              flex: 1, 
+              minWidth: 300, 
+              borderRadius: 3, 
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              bgcolor: theme.white
+            }}>
               <CardContent sx={{ p: 4 }}>
                 <Typography variant="h5" fontWeight="medium" sx={{ mb: 3 }}>Emergency Contacts</Typography>
                 <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
@@ -256,29 +278,29 @@ const MentalHealthSupport = () => {
                     sx={{ 
                       "& .MuiOutlinedInput-root": { 
                         borderRadius: 2,
-                        bgcolor: "#f9f9f9"
+                        bgcolor: theme.accent
                       } 
                     }}
                   />
                   <IconButton 
                     onClick={handleAddContact} 
                     sx={{ 
-                      bgcolor: "#9c27b0", 
-                      color: "white",
-                      "&:hover": { bgcolor: "#7b1fa2" }
+                      bgcolor: theme.primary, 
+                      color: theme.white,
+                      "&:hover": { bgcolor: "#7a5c42" }
                     }}
                   >
                     <AddIcon />
                   </IconButton>
                 </Box>
-                <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" color={theme.textSecondary} sx={{ mb: 2 }}>
                   Saved Contacts:
                 </Typography>
                 <List>
                   {emergencyContacts.map((c, index) => (
                     <ListItem key={index} sx={{ px: 1 }}>
                       <ListItemIcon>
-                        <PersonIcon sx={{ color: "#666" }} />
+                        <PersonIcon sx={{ color: theme.primary }} />
                       </ListItemIcon>
                       <ListItemText primary={c} />
                     </ListItem>
@@ -291,45 +313,66 @@ const MentalHealthSupport = () => {
           {/* Additional Support Section */}
           <Box sx={{ mt: 5, display: "flex", gap: 3, flexWrap: "wrap" }}>
             {/* 24/7 Support */}
-            <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <Card sx={{ 
+              flex: 1, 
+              minWidth: 300, 
+              borderRadius: 3, 
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              bgcolor: theme.secondary
+            }}>
               <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box sx={{ color: "#9c27b0", mr: 2 }}>
+                  <Box sx={{ color: theme.primary, mr: 2 }}>
                     <AccessTimeIcon fontSize="large" />
                   </Box>
                   <Typography variant="h6">24/7 Support</Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color={theme.textSecondary}>
                   Always available when you need help.
                 </Typography>
               </CardContent>
             </Card>
             
-            {/* Confidential */}
-            <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <Card
+      sx={{
+        flex: 1,
+        minWidth: 300,
+        borderRadius: 3,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        bgcolor: theme.secondary,
+        cursor: "pointer" // Makes it look clickable
+      }}
+      onClick={() => navigate("/habit-tracker")} // Navigate on click
+    >
               <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box sx={{ color: "#9c27b0", mr: 2 }}>
-                    <ShieldIcon fontSize="large" />
+                  <Box sx={{ color: theme.primary, mr: 2 }}>
+                    <SupportAgentIcon fontSize="large" />
                   </Box>
-                  <Typography variant="h6">Confidential</Typography>
+                  <Typography variant="h6">Habit Tracker</Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Your privacy is our top priority.
+                <Typography variant="body2" color={theme.textSecondary}>
+                  Your safety is our priority.
                 </Typography>
               </CardContent>
             </Card>
             
             {/* Professional Care */}
-            <Card sx={{ flex: 1, minWidth: 300, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <Card sx={{ 
+              flex: 1, 
+              minWidth: 300, 
+              borderRadius: 3, 
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              bgcolor: theme.secondary
+            }}>
               <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box sx={{ color: "#9c27b0", mr: 2 }}>
+                  <Box sx={{ color: theme.primary, mr: 2 }}>
                     <SupportAgentIcon fontSize="large" />
                   </Box>
                   <Typography variant="h6">Professional Care</Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color={theme.textSecondary}>
                   Expert counselors ready to help.
                 </Typography>
               </CardContent>
@@ -348,7 +391,6 @@ const MentalHealthSupport = () => {
         >
           <Button 
             variant="contained" 
-            color="error" 
             size="large" 
             startIcon={<PhoneIcon />}
             onClick={() => setHelpModalOpen(true)}
@@ -358,8 +400,8 @@ const MentalHealthSupport = () => {
               py: 1.5,
               textTransform: "none",
               fontSize: "1rem",
-              bgcolor: "#e53935",
-              "&:hover": { bgcolor: "#c62828" }
+              bgcolor: theme.primary,
+              "&:hover": { bgcolor: "#7a5c42" }
             }}
           >
             Get Help Now
@@ -369,31 +411,65 @@ const MentalHealthSupport = () => {
 
       {/* Modals */}
       {/* Help Modal */}
-      <Dialog open={helpModalOpen} onClose={() => setHelpModalOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Emergency Support</DialogTitle>
+      <Dialog 
+        open={helpModalOpen} 
+        onClose={() => setHelpModalOpen(false)} 
+        fullWidth 
+        maxWidth="sm"
+        PaperProps={{ 
+          sx: { bgcolor: theme.background } 
+        }}
+      >
+        <DialogTitle sx={{ color: theme.primary }}>Emergency Support</DialogTitle>
         <DialogContent>
-          <Typography variant="h6">Immediate Assistance</Typography>
+          <Typography variant="h6" sx={{ color: theme.primary }}>Immediate Assistance</Typography>
           <Typography variant="body1">If you or someone you know is in crisis, call emergency services immediately.</Typography>
-          <Button variant="contained" color="primary" fullWidth sx={{ mt: 2 }} onClick={() => window.location.href = 'tel:+911'}>
+          <Button 
+            variant="contained" 
+            fullWidth 
+            sx={{ 
+              mt: 2, 
+              bgcolor: theme.primary,
+              "&:hover": { bgcolor: "#7a5c42" }
+            }} 
+            onClick={() => window.location.href = 'tel:+911'}
+          >
             📞 Call Emergency Helpline
           </Button>
         </DialogContent>
       </Dialog>
 
       {/* Crisis Modal */}
-      <Dialog open={crisisModalOpen} onClose={() => setCrisisModalOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Crisis Analysis - Find a Professional</DialogTitle>
+      <Dialog 
+        open={crisisModalOpen} 
+        onClose={() => setCrisisModalOpen(false)} 
+        fullWidth 
+        maxWidth="sm"
+        PaperProps={{ 
+          sx: { bgcolor: theme.background } 
+        }}
+      >
+        <DialogTitle sx={{ color: theme.primary }}>Crisis Analysis - Find a Professional</DialogTitle>
         <DialogContent>
-          <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)} variant="fullWidth">
+          <Tabs 
+            value={tabIndex} 
+            onChange={(e, newValue) => setTabIndex(newValue)} 
+            variant="fullWidth"
+            TabIndicatorProps={{ sx: { bgcolor: theme.primary } }}
+            sx={{
+              "& .MuiTab-root": { color: theme.textSecondary },
+              "& .Mui-selected": { color: theme.primary }
+            }}
+          >
             <Tab icon={tabIcons[0]} label="Counselors" iconPosition="start" />
             <Tab icon={tabIcons[1]} label="Doctors" iconPosition="start" />
             <Tab icon={tabIcons[2]} label="Therapists" iconPosition="start" />
           </Tabs>
           <Box p={2}>
             {[counselors, doctors, therapists][tabIndex].map((professional, index) => (
-              <Card key={index} sx={{ mb: 2, p: 2 }}>
+              <Card key={index} sx={{ mb: 2, p: 2, bgcolor: theme.white }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <Avatar sx={{ bgcolor: tabIndex === 0 ? "#9c27b0" : tabIndex === 1 ? "#1976d2" : "#43a047", mr: 2 }}>
+                  <Avatar sx={{ bgcolor: theme.primary, mr: 2 }}>
                     {tabIndex === 0 ? <PsychologyIcon /> : tabIndex === 1 ? <LocalHospitalIcon /> : <HealthAndSafetyIcon />}
                   </Avatar>
                   <Typography variant="h6">{professional.name}</Typography>
@@ -401,9 +477,13 @@ const MentalHealthSupport = () => {
                 <Typography variant="body2" sx={{ mb: 2 }}>Contact: {professional.contact}</Typography>
                 <Button 
                   variant="contained" 
-                  color="primary" 
                   startIcon={<ChatIcon />}
-                  sx={{ borderRadius: 2, textTransform: "none" }}
+                  sx={{ 
+                    borderRadius: 2, 
+                    textTransform: "none", 
+                    bgcolor: theme.primary,
+                    "&:hover": { bgcolor: "#7a5c42" }
+                  }}
                   onClick={() => handleOpenChat(professional)}
                 >
                   Chat Now
@@ -425,13 +505,20 @@ const MentalHealthSupport = () => {
             height: "70vh", 
             maxHeight: "600px", 
             display: "flex", 
-            flexDirection: "column" 
+            flexDirection: "column",
+            bgcolor: theme.background
           } 
         }}
       >
-        <DialogTitle sx={{ bgcolor: "#f5f5f5", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <DialogTitle sx={{ 
+          bgcolor: theme.accent, 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center",
+          color: theme.primary 
+        }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Avatar sx={{ bgcolor: tabIndex === 0 ? "#9c27b0" : tabIndex === 1 ? "#1976d2" : "#43a047", mr: 2 }}>
+            <Avatar sx={{ bgcolor: theme.primary, mr: 2 }}>
               {tabIndex === 0 ? <PsychologyIcon /> : tabIndex === 1 ? <LocalHospitalIcon /> : <HealthAndSafetyIcon />}
             </Avatar>
             <Typography variant="h6">
@@ -439,7 +526,7 @@ const MentalHealthSupport = () => {
             </Typography>
           </Box>
           <IconButton onClick={() => setChatOpen(false)}>
-            <CloseIcon />
+            <CloseIcon sx={{ color: theme.primary }} />
           </IconButton>
         </DialogTitle>
         
@@ -455,7 +542,7 @@ const MentalHealthSupport = () => {
                 }}
               >
                 {msg.sender === "professional" && (
-                  <Avatar sx={{ bgcolor: tabIndex === 0 ? "#9c27b0" : tabIndex === 1 ? "#1976d2" : "#43a047", mr: 1 }}>
+                  <Avatar sx={{ bgcolor: theme.primary, mr: 1 }}>
                     {tabIndex === 0 ? <PsychologyIcon /> : tabIndex === 1 ? <LocalHospitalIcon /> : <HealthAndSafetyIcon />}
                   </Avatar>
                 )}
@@ -467,18 +554,18 @@ const MentalHealthSupport = () => {
                     maxWidth: "70%", 
                     borderRadius: 2,
                     bgcolor: msg.sender === "user" 
-                      ? "#e3f2fd" 
+                      ? theme.secondary 
                       : msg.sender === "system"
-                      ? "#f5f5f5"
-                      : "#ffffff",
-                    border: msg.sender === "system" ? "1px dashed #bbbbbb" : "none"
+                      ? theme.accent
+                      : theme.white,
+                    border: msg.sender === "system" ? `1px dashed ${theme.primary}` : "none"
                   }}
                 >
                   <Typography variant="body1">{msg.message}</Typography>
                 </Paper>
                 
                 {msg.sender === "user" && (
-                  <Avatar sx={{ bgcolor: "#4caf50", ml: 1 }}>
+                  <Avatar sx={{ bgcolor: theme.primary, ml: 1 }}>
                     <PersonIcon />
                   </Avatar>
                 )}
@@ -487,7 +574,7 @@ const MentalHealthSupport = () => {
           </Box>
         </DialogContent>
         
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
+        <DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.secondary}` }}>
           <Box sx={{ display: "flex", width: "100%" }}>
             <TextField
               fullWidth
@@ -496,14 +583,32 @@ const MentalHealthSupport = () => {
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                "& .MuiOutlinedInput-root": { 
+                  bgcolor: theme.white,
+                  "& fieldset": {
+                    borderColor: theme.secondary
+                  },
+                  "&:hover fieldset": {
+                    borderColor: theme.primary
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: theme.primary
+                  }
+                }
+              }}
             />
             <Button 
               variant="contained" 
-              color="primary" 
               endIcon={<SendIcon />} 
               onClick={handleSendMessage}
               disabled={!chatMessage.trim()}
+              sx={{ 
+                bgcolor: theme.primary,
+                "&:hover": { bgcolor: "#7a5c42" },
+                "&.Mui-disabled": { bgcolor: "#c0b0a0" }
+              }}
             >
               Send
             </Button>
