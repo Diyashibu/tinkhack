@@ -19,7 +19,9 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
-  Avatar
+  Avatar,
+  AppBar,
+  Toolbar
 } from "@mui/material";
 import PhoneIcon from "@mui/icons-material/Phone";
 import AddIcon from "@mui/icons-material/Add";
@@ -34,6 +36,8 @@ import LocalHospitalIcon from "@mui/icons-material/LocalHospital";  // For docto
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";  // For therapists
 import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
+import { useNavigate } from 'react-router-dom';
+import supabase from "../supabase";
 
 const counselors = [
   { name: "Dr. Sarah Johnson", contact: "+91 98765 43210" },
@@ -51,6 +55,7 @@ const therapists = [
 ];
 
 const MentalHealthSupport = () => {
+  const navigate = useNavigate();
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [crisisModalOpen, setCrisisModalOpen] = useState(false);
   const [contact, setContact] = useState("");
@@ -114,16 +119,59 @@ const MentalHealthSupport = () => {
     <LocalHospitalIcon key="doctors" />,
     <HealthAndSafetyIcon key="therapists" />
   ];
-
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error logging out:', error);
+        // Optionally show an error message to the user
+      } else {
+        navigate("/"); // Redirect to login page after successful logout
+      }
+    } catch (err) {
+      console.error('Unexpected error during logout:', err);
+    }
+  };
   return (
     <>
+      <AppBar position="static">
+  <Toolbar 
+    sx={{ 
+      display: "flex", 
+      justifyContent: "space-between",
+      padding: 0,
+      minHeight: "auto"
+    }}
+  >
+    <Typography 
+      variant="h6" 
+      sx={{ 
+        cursor: "pointer",
+        paddingLeft: "4px",
+        margin: 0
+      }} 
+      onClick={() => navigate("/")}
+    >
+      My App
+    </Typography>
+    <Box sx={{ 
+      display: "flex", 
+      margin: 0,
+      padding: 0
+    }}>
+      <Button color="inherit" onClick={() => navigate("/Community")}>Community</Button>
+      <Button color="inherit" onClick={() => navigate("/Help")}>Help</Button>
+      <Button color="inherit" onClick={handleLogout}>Logout</Button>
+    </Box>
+  </Toolbar>
+</AppBar>
       <Box sx={{ minHeight: "100vh", bgcolor: "#f0f8ff" }}>
         {/* Header */}
         <Box sx={{ 
           display: "flex", 
           justifyContent: "space-between", 
           alignItems: "center", 
-          p: 2,
+          p: 0,
           borderBottom: "1px solid #e0e0e0",
           bgcolor: "white"
         }}>

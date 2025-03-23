@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import supabase from "../supabase";
 import { TextField, Button, Card, CardContent, Typography, Box, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [user, setUser] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -13,57 +15,112 @@ export default function Auth() {
   const [supportNeeds, setSupportNeeds] = useState("");
   const [preferredCommunication, setPreferredCommunication] = useState("");
   const [role, setRole] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user || null);
-      if (user) checkUserProfile(user.id);
+      if (user) {
+        await checkUserProfile(user.id);
+        if (!isNewUser) {
+          // Redirect existing users to Help page
+          navigate('/Help');
+        }
+      }
     };
   
     fetchUser();
   
-    // Listen for authentication changes (fixes the issue)
+    // Listen for authentication changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
-        setUser(null); // Ensure state resets properly
-        setIsSignUp(false); // Show login form
+        setUser(null);
+        setIsSignUp(false);
         setIsNewUser(false);
       }
     });
   
     return () => {
-      authListener.subscription.unsubscribe(); // Cleanup listener
+      authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [isNewUser, navigate]);
+
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      return "Email is required";
+    } else if (!regex.test(email)) {
+      return "Please enter a valid email address";
+    }
+    return "";
+  };
+
+  const validatePassword = () => {
+    if (!password) {
+      return "Password is required";
+    } else if (password.length < 6) {
+      return "Password must be at least 6 characters long";
+    } else if (isSignUp && password !== confirmPassword) {
+      return "Passwords do not match";
+    }
+    return "";
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setUser(null); // Clear user state
-    setIsNewUser(false); // Ensure login form is shown
-    setIsSignUp(false); // Reset signup state
+    setUser(null);
+    setIsNewUser(false);
+    setIsSignUp(false);
   };
   
-
   const handleSignUp = async () => {
+    // Validate email
+    const emailErrorMsg = validateEmail(email);
+    setEmailError(emailErrorMsg);
+
+    // Validate password
+    const passwordErrorMsg = validatePassword();
+    setPasswordError(passwordErrorMsg);
+
+    // If there are validation errors, return
+    if (emailErrorMsg || passwordErrorMsg) {
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: null }, // Prevents email verification
+      options: { emailRedirectTo: null },
     });
   
     if (error) {
       alert(error.message);
     } else {
-      setIsSignUp(false); // Redirect to login screen
-      alert("Sign-up successful! Please log in.");
-      navigate("/");
+      // Set the user and isNewUser state directly
+      setUser(data.user);
+      setIsNewUser(true);
+      // No need to navigate or show alert
     }
   };
   
-
   const handleLogin = async () => {
-    if (!email || !password) {
-      alert("Please enter email and password");
+    // Validate email
+    const emailErrorMsg = validateEmail(email);
+    setEmailError(emailErrorMsg);
+
+    // Validate password exists
+    if (!password) {
+      setPasswordError("Password is required");
+      return;
+    } else {
+      setPasswordError("");
+    }
+
+    // If there are validation errors, return
+    if (emailErrorMsg) {
       return;
     }
   
@@ -77,14 +134,19 @@ export default function Auth() {
       alert(error.message);
     } else {
       setUser(data.user);
-      checkUserProfile(data.user.id);
+      await checkUserProfile(data.user.id);
+      if (!isNewUser) {
+        // Redirect existing users to Help page
+        navigate('/Help');
+      }
     }
   };
   
-
   const checkUserProfile = async (userId) => {
     let { data } = await supabase.from("profiles").select("id").eq("id", userId);
-    setIsNewUser(data.length === 0);
+    const newUserStatus = data.length === 0;
+    setIsNewUser(newUserStatus);
+    return newUserStatus;
   };
 
   const handleSaveProfile = async () => {
@@ -97,7 +159,7 @@ export default function Auth() {
         support_needs: supportNeeds,
         preferred_communication: preferredCommunication,
         role,
-        created_at: new Date().toISOString(), // Ensures a timestamp is added
+        created_at: new Date().toISOString(),
       },
     ]);
 
@@ -105,8 +167,30 @@ export default function Auth() {
       alert("Error saving profile: " + error.message);
     } else {
       alert("Profile saved! Thank you for sharing.");
-      setIsNewUser(false);
+      navigate('/Help');
     }
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (value) {
+      setEmailError(validateEmail(value));
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (isSignUp && confirmPassword) {
+      setPasswordError(value !== confirmPassword ? "Passwords do not match" : "");
+    }
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+    setPasswordError(password !== value ? "Passwords do not match" : "");
   };
 
   return (
@@ -120,8 +204,38 @@ export default function Auth() {
                 <Typography variant="h5" fontWeight="bold" mb={2}>
                   Create an Account
                 </Typography>
-                <TextField label="Email" variant="outlined" fullWidth margin="normal" onChange={(e) => setEmail(e.target.value)} />
-                <TextField label="Password" type="password" variant="outlined" fullWidth margin="normal" onChange={(e) => setPassword(e.target.value)} />
+                <TextField 
+                  label="Email" 
+                  variant="outlined" 
+                  fullWidth 
+                  margin="normal" 
+                  value={email}
+                  onChange={handleEmailChange}
+                  error={!!emailError}
+                  helperText={emailError}
+                />
+                <TextField 
+                  label="Password" 
+                  type="password" 
+                  variant="outlined" 
+                  fullWidth 
+                  margin="normal" 
+                  value={password}
+                  onChange={handlePasswordChange}
+                  error={!!passwordError && confirmPassword === ""}
+                  helperText={passwordError && confirmPassword === "" ? passwordError : ""}
+                />
+                <TextField 
+                  label="Confirm Password" 
+                  type="password" 
+                  variant="outlined" 
+                  fullWidth 
+                  margin="normal" 
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  error={!!passwordError && confirmPassword !== ""}
+                  helperText={passwordError && confirmPassword !== "" ? passwordError : ""}
+                />
                 <TextField
                   label="Date of Birth"
                   type="date"
@@ -144,8 +258,27 @@ export default function Auth() {
                 <Typography variant="h5" fontWeight="bold" mb={2}>
                   Login
                 </Typography>
-                <TextField label="Email" variant="outlined" fullWidth margin="normal" onChange={(e) => setEmail(e.target.value)} />
-                <TextField label="Password" type="password" variant="outlined" fullWidth margin="normal" onChange={(e) => setPassword(e.target.value)} />
+                <TextField 
+                  label="Email" 
+                  variant="outlined" 
+                  fullWidth 
+                  margin="normal" 
+                  value={email}
+                  onChange={handleEmailChange}
+                  error={!!emailError}
+                  helperText={emailError}
+                />
+                <TextField 
+                  label="Password" 
+                  type="password" 
+                  variant="outlined" 
+                  fullWidth 
+                  margin="normal" 
+                  value={password}
+                  onChange={handlePasswordChange}
+                  error={!!passwordError}
+                  helperText={passwordError}
+                />
                 <Button variant="contained" color="primary" fullWidth sx={{ mt: 2 }} onClick={handleLogin}>
                   Login
                 </Button>
@@ -182,14 +315,7 @@ export default function Auth() {
                 Save Profile
               </Button>
             </Box>
-          ) :(
-            <Box>
-    <Typography variant="h6">Welcome back!</Typography>
-    <Button variant="contained" color="error" fullWidth sx={{ mt: 2 }} onClick={handleLogout}>
-      Logout
-    </Button>
-  </Box>
-          )}
+          ) : null }
         </CardContent>
       </Card>
     </Box>
